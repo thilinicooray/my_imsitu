@@ -26,7 +26,7 @@ class imSituTensorEvaluation():
       if image_names is not None: _image = image_names[i]
 
       lr = _ref.size()[0]     
-      max_r = (lr - 1)/2/self.nref
+      max_r = (lr - 1)//2//self.nref
 
       gt_v = _ref[0]
       if image_names is not None and _image in self.image_group: sc_key = (gt_v, self.image_group[_image])
