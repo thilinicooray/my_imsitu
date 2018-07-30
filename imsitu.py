@@ -48,7 +48,8 @@ class imSituTensorEvaluation():
      
       k = 0
       p_frame = None
-      print(type(_sorted_idx), type(gt_v), type(1))
+      print('get element', _sorted_idx[0:self.topk])
+      print('sum', torch.sum(_sorted_idx[0:self.topk] == gt_v))
       verb_found = (torch.sum(_sorted_idx[0:self.topk] == gt_v) == 1)
       if verb_found: _score_card["verb"] += 1
       p_frame = _pred[gt_v]  
