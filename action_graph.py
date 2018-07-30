@@ -43,12 +43,12 @@ class action_graph(nn.Module):
     def forward(self, input_):
 
         #init hidden state with xavier
-        vert_state = torch.zeros(input_[0].size(1), self.vert_state_dim)
-        edge_state = torch.zeros(input_[1].size(1), self.edge_state_dim)
+        vert_state = torch.zeros(input_[0].size(1), self.vert_state_dim).cuda()
+        edge_state = torch.zeros(input_[1].size(1), self.edge_state_dim).cuda()
 
-        if self.gpu_mode >= 0:
+        '''if self.gpu_mode >= 0:
             vert_state = torch.tensor(vert_state.cuda())
-            edge_state = torch.tensor(edge_state.cuda())
+            edge_state = torch.tensor(edge_state.cuda())'''
 
         batch_size = input_[0].size(0)
         vert_input = input_[0]
