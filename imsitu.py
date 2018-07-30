@@ -298,7 +298,7 @@ class imSituVerbRoleLocalNounEncoder(imSituVerbRoleNounEncoder):
       _fr = {}
       for (vr,vrn) in frame:
         if vrn not in self.vr_id_n[vr]: 
-          print "index error, verb = {}".format(verb)
+          print ("index error, verb = {}".format(verb))
           n = -1
         else:
           n = self.id_n[self.vr_id_n[vr][vrn]]
