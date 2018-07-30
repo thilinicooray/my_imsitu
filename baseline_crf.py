@@ -226,7 +226,7 @@ class baseline_crf(nn.Module):
      print (cnn_type)
      if cnn_type == "resnet_101" : self.cnn = resnet_modified_large()
      elif cnn_type == "resnet_50": self.cnn = resnet_modified_medium()
-     elif cnn_type == "resnet_34": self.cnn = resnet_modified_small1()
+     elif cnn_type == "resnet_34": self.cnn = resnet_modified_small()
      else: 
        print ("unknown base network")
        exit()
@@ -248,8 +248,8 @@ class baseline_crf(nn.Module):
      total = 0 
      for (k,v) in self.split_vr.items():
        #print "{} {} {}".format(k, len(v), splits[k]*len(v))
-       total += len(v)
-     print ("total compute : {}".format(total) )
+       total += splits[k]*len(v)
+     #print ("total compute : {}".format(total) )
      
      #keep the splits sorted by vr id, to keep the model const w.r.t the encoding 
      for i in range(0,len(splits)):
@@ -294,7 +294,10 @@ class baseline_crf(nn.Module):
      self.v_vr = gv_vr
      #print self.v_vr
 
-     '''self.graph = action_graph(self.cnn.segment_count(), 3, 0)'''
+     self.graph = action_graph(self.cnn.segment_count(), 3, 0)
+
+     '''self.role_lookup_table = nn.Embedding(total, self.rep_size, padding_idx=self.num_roles)
+     initLinear(self.role_lookup_table)'''
 
      #verb potential
      self.linear_v = nn.Linear(self.rep_size, self.encoding.n_verbs())
@@ -346,7 +349,7 @@ class baseline_crf(nn.Module):
      #print('cnn out size', img_embedding_batch.size())
 
      #initialize verb node with summation of all region feature vectors
-     '''verb_init = img_embedding_batch[:,0]
+     verb_init = img_embedding_batch[:,0]
      #print('verb_init', verb_init.size(), torch.unsqueeze(verb_init, 1).size())
 
      vert_init = img_embedding_batch
@@ -358,10 +361,13 @@ class baseline_crf(nn.Module):
 
      #print('input to graph :', vert_init.size(), edge_init.size())
 
-     vert_states, edge_states = self.graph((vert_init,edge_init))'''
+     vert_states, edge_states = self.graph((vert_init,edge_init))
      #print self.rep_size
      #print batch_size
-     v_potential = self.linear_v(img_embedding_batch)
+     v_potential = self.linear_v(vert_states[:0])
+
+     combo = vert_states[:, 1:] + edge_states
+
      
      vrn_potential = []
      vrn_marginal = []
@@ -373,7 +379,7 @@ class baseline_crf(nn.Module):
      #To use less memory but achieve less parrelism, increase the number of groups
      for i,vrn_group in enumerate(self.linear_vrn): 
        #linear for the group
-       _vrn = vrn_group(img_embedding_batch).view(-1, self.splits[i])
+       _vrn = vrn_group(combo).view(-1, self.splits[i])
        
        _vr_maxi, _vr_max ,_vrn_marginal = self.log_sum_exp(_vrn)
        _vr_maxi = _vr_maxi.view(-1, len(self.split_vr[i]))
@@ -428,9 +434,9 @@ class baseline_crf(nn.Module):
      
      #this potentially does not work with parrelism, in which case we should figure something out 
      if self.prediction_type == "max_max":
-       rv = ( img_embedding_batch, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
+       rv = ( combo, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
      elif self.prediction_type == "max_marginal":
-       rv = (img_embedding_batch, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
+       rv = (combo, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
      else:
        print ("unkown inference type")
        rv = ()
