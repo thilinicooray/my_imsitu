@@ -480,7 +480,8 @@ class baseline_crf(nn.Module):
        for r in range(0,n_refs):
          v = _ref[0]
          pots = _v[v]
-         for (pos,(s, idx, rid)) in enumerate(self.v_roles[v]):
+         print('vvvvvvvvv', v)
+         for (pos,(s, idx, rid)) in enumerate(self.v_roles[v.item()]):
        #    print _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
 #_vrn[s][idx][
            pots = pots + _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
