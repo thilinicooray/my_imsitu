@@ -46,6 +46,9 @@ class action_graph(nn.Module):
         vert_state = torch.zeros(input_[0].size(1), self.vert_state_dim)
         edge_state = torch.zeros(input_[1].size(1), self.edge_state_dim)
 
+        vert_state = vert_state.data
+        edge_state = edge_state.data
+
         '''if self.gpu_mode >= 0:
             vert_state = torch.tensor(vert_state.cuda())
             edge_state = torch.tensor(edge_state.cuda())'''
