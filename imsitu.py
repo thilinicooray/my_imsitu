@@ -62,7 +62,7 @@ class imSituTensorEvaluation():
         for r in range(0,self.nref):
 #          print nv
 #          print _ref[1 + 2*max_r*r + 2*k+1]
-          if nv == _ref[1 + 2*max_r*r + 2*k+1]:
+          if nv == _ref[1 + 2*max_r*r + 2*k+1].cuda():
             found = True
             break
         if not found: all_found = False
