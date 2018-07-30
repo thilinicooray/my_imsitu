@@ -47,8 +47,8 @@ class action_graph(nn.Module):
         edge_state = torch.zeros(input_[1].size(1), self.edge_state_dim)
 
         if self.gpu_mode >= 0:
-            vert_state = vert_state.cuda()
-            edge_state = edge_state.cuda()
+            vert_state = torch.tensor(vert_state.cuda())
+            edge_state = torch.tensor(edge_state.cuda())
 
         batch_size = input_[0].size(0)
         vert_input = input_[0]
