@@ -19,7 +19,7 @@ from imsitu import imSituSimpleImageFolder
 from utils import initLinear
 import json
 
-from .action_graph import action_graph
+from action_graph import action_graph
 
 class resnet_modified_small(nn.Module):
     def __init__(self):
