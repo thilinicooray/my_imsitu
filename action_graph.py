@@ -60,8 +60,9 @@ class action_graph(nn.Module):
         for i in range(batch_size):
             torch.nn.init.xavier_uniform(vert_state)
             torch.nn.init.xavier_uniform(edge_state)
-            vert_state = self.vert_gru(vert_input[i].data, vert_state.data)
-            edge_state = self.edge_gru(edge_input[i].data, edge_state.data)
+            print(vert_input[i].type(), vert_input[i].data.type(), vert_state.type())
+            vert_state = self.vert_gru(vert_input[i], vert_state)
+            edge_state = self.edge_gru(edge_input[i], edge_state)
 
             #todo: check whether this way is correct, TF code uses a separate global var to keep hidden state
             for i in range(self.num_steps):
