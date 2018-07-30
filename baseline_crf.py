@@ -340,6 +340,8 @@ class baseline_crf(nn.Module):
      batch_size = image.size()[0]
 
      img_embedding_batch = self.cnn(image)
+     full = img_embedding_batch[:,0]
+     combo = torch.sum(img_embedding_batch[:,1:],1)
      #img_embedding_adjusted = self.img_embedding_layer(img_embedding)
      #print('cnn out size', img_embedding_batch.size())
 
@@ -359,7 +361,7 @@ class baseline_crf(nn.Module):
      vert_states, edge_states = self.graph((vert_init,edge_init))'''
      #print self.rep_size
      #print batch_size
-     v_potential = self.linear_v(img_embedding_batch[:,0])
+     v_potential = self.linear_v(full)
      
      vrn_potential = []
      vrn_marginal = []
@@ -371,7 +373,7 @@ class baseline_crf(nn.Module):
      #To use less memory but achieve less parrelism, increase the number of groups
      for i,vrn_group in enumerate(self.linear_vrn): 
        #linear for the group
-       _vrn = vrn_group(img_embedding_batch[:,0]).view(-1, self.splits[i])
+       _vrn = vrn_group(combo).view(-1, self.splits[i])
        
        _vr_maxi, _vr_max ,_vrn_marginal = self.log_sum_exp(_vrn)
        _vr_maxi = _vr_maxi.view(-1, len(self.split_vr[i]))
@@ -426,9 +428,9 @@ class baseline_crf(nn.Module):
      
      #this potentially does not work with parrelism, in which case we should figure something out 
      if self.prediction_type == "max_max":
-       rv = (img_embedding_batch[:,0], v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
+       rv = ( combo, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
      elif self.prediction_type == "max_marginal":
-       rv = (img_embedding_batch[:,0], v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
+       rv = (combo, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
      else:
        print ("unkown inference type")
        rv = ()
@@ -484,7 +486,7 @@ class baseline_crf(nn.Module):
        #    print _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
 #_vrn[s][idx][
            pots = pots + _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
-           print('pots ', pots)
+           #print('pots ', pots)
          if pots.data[0] > _norm.data[0]: 
            print ("inference error")
            print (pots)
@@ -492,7 +494,7 @@ class baseline_crf(nn.Module):
          if r == 0: _tot = pots-_norm 
          else :
              _tot = self.logsumexp_nx_ny_xy(_tot, pots-_norm)
-             print('tot', _tot)
+             #print('tot', _tot)
        if i == 0: loss = _tot
        else: loss = loss + _tot
      return -loss/batch_size
