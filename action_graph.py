@@ -60,7 +60,7 @@ class action_graph(nn.Module):
         for i in range(batch_size):
             torch.nn.init.xavier_uniform(vert_state)
             torch.nn.init.xavier_uniform(edge_state)
-            print(vert_input[i].type(), vert_input[i].data.type(), vert_state.type())
+            print(type(vert_input[i]), type(vert_input[i].data), type(vert_state))
             vert_state = self.vert_gru(vert_input[i], vert_state)
             edge_state = self.edge_gru(edge_input[i], edge_state)
 
