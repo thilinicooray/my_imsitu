@@ -439,7 +439,7 @@ class baseline_crf(nn.Module):
    #returns the the log of V 
    def logsumexp_nx_ny_xy(self, x, y):
      #_,_, v = self.log_sum_exp(torch.cat([x, y, torch.log(torch.exp(x+y))]).view(1,3))
-     if x > y: 
+     if x.data[0] > y.data[0]: 
        return torch.log(torch.exp(y-x) + 1 - torch.exp(y) + 1e-8) + x
      else:
        return torch.log(torch.exp(x-y) + 1 - torch.exp(x) + 1e-8) + y
