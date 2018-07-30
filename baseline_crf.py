@@ -569,7 +569,7 @@ def train_model(max_epoch, eval_frequency, train_loader, dev_loader, model, enco
     top1 = imSituTensorEvaluation(1, 3, encoding)
     top5 = imSituTensorEvaluation(5, 3, encoding)
     loss_total = 0 
-    print_freq = 10
+    print_freq = 50
     total_steps = 0
     avg_scores = []
   
