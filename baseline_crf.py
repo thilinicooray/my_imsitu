@@ -163,7 +163,7 @@ class resnet_modified_medium(nn.Module):
  
 class resnet_modified_small1(nn.Module):
  def __init__(self):
-    super(resnet_modified_small, self).__init__()
+    super(resnet_modified_small1, self).__init__()
     self.resnet = tv.models.resnet34(pretrained=True)
     #probably want linear, relu, dropout
     self.linear = nn.Linear(7*7*512, 1024)
