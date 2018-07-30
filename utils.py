@@ -15,10 +15,10 @@ def init_gru_cell(input):
 
   weight = eval('input.weight_ih')
   bias = np.sqrt(6.0 / (weight.size(0) / 4 + weight.size(1)))
-  nn.init.uniform_(weight, -bias, bias)
+  nn.init.uniform(weight, -bias, bias)
   weight = eval('input.weight_hh')
   bias = np.sqrt(6.0 / (weight.size(0) / 4 + weight.size(1)))
-  nn.init.uniform_(weight, -bias, bias)
+  nn.init.uniform(weight, -bias, bias)
 
   if input.bias:
     weight = eval('input.bias_ih' )
