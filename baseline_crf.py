@@ -1,6 +1,7 @@
 import os
 import time
 from torch import optim
+import torch.nn.init as init
 import random as rand
 import torch
 import torch.nn as nn
@@ -17,6 +18,65 @@ from imsitu import imSituSituation
 from imsitu import imSituSimpleImageFolder
 from utils import initLinear
 import json
+
+from .action_graph import action_graph
+
+class resnet_modified_small(nn.Module):
+    def __init__(self):
+        super(resnet_modified_small, self).__init__()
+        self.resnet = tv.models.resnet34(pretrained=True)
+
+        #finetune last conv later set
+        for p in self.resnet.layer4.parameters():
+            p.requires_grad = True
+
+
+
+        #probably want linear, relu, dropout
+        self.linear = nn.Linear(7*7*512, 512)
+        self.dropout2d = nn.Dropout2d(.5)
+        self.dropout = nn.Dropout(.5)
+        self.relu = nn.LeakyReLU()
+        init.xavier_normal_(self.linear.weight)
+
+        #self.conv1 = nn.Conv2d(512, 256, 3, stride=1, padding=1)
+        #self.conv2 = nn.Conv2d(265, 256, 3, stride=2, padding=1)
+        #self.conv3 = nn.Conv2d(256, 256, 3, stride=2, padding=1)
+
+        #utils.init_weight(self.conv1)
+        #utils.init_weight(self.conv2)
+        #utils.init_weight(self.conv3)
+
+        self.linear1 = nn.Linear(14*14, 512)
+        self.dropout2d1 = nn.Dropout2d(.5)
+        self.dropout1 = nn.Dropout(.5)
+        self.relu1 = nn.LeakyReLU()
+        init.xavier_normal_(self.linear1.weight)
+
+    def base_size(self): return 512
+    def segment_count(self): return 128
+    def rep_size(self): return 512
+
+    def forward(self, x):
+        x = self.resnet.conv1(x)
+        x = self.resnet.bn1(x)
+        x = self.resnet.relu(x)
+        x = self.resnet.maxpool(x)
+
+        x = self.resnet.layer1(x)
+        x = self.resnet.layer2(x)
+        x = self.resnet.layer3(x)
+        x = self.resnet.layer4(x)
+
+        #x = self.dropout2d(x)
+
+        x_full = self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
+
+        x_full_segment = self.dropout1(self.relu1(self.linear1(x.view(-1, 14*14))))
+        x_full_segment = x_full_segment.view(-1,self.segment_count(),self.base_size())
+
+
+        return torch.cat((torch.unsqueeze(x_full,1), x_full_segment), 1)
 
 class vgg_modified(nn.Module):
   def __init__(self):
@@ -101,7 +161,7 @@ class resnet_modified_medium(nn.Module):
         return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
  
  
-class resnet_modified_small(nn.Module):
+'''class resnet_modified_small(nn.Module):
  def __init__(self):
     super(resnet_modified_small, self).__init__()
     self.resnet = tv.models.resnet34(pretrained=True)
@@ -128,7 +188,7 @@ class resnet_modified_small(nn.Module):
      
         x = self.dropout2d(x)
 
-        return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
+        return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))'''
       
 class baseline_crf(nn.Module):
    def train_preprocess(self): return self.train_transform
@@ -234,6 +294,8 @@ class baseline_crf(nn.Module):
      self.v_vr = gv_vr
      #print self.v_vr
 
+     self.graph = action_graph(self.cnn.segment_count(), 3, 0)
+
      #verb potential
      self.linear_v = nn.Linear(self.rep_size, self.encoding.n_verbs())
      #verb-role-noun potentials
@@ -277,10 +339,27 @@ class baseline_crf(nn.Module):
    def forward(self, image):
      batch_size = image.size()[0]
 
-     rep = self.cnn(image)
+     img_embedding_batch = self.cnn(image)
+     #img_embedding_adjusted = self.img_embedding_layer(img_embedding)
+     #print('cnn out size', img_embedding_batch.size())
+
+     #initialize verb node with summation of all region feature vectors
+     verb_init = img_embedding_batch[:,0]
+     #print('verb_init', verb_init.size(), torch.unsqueeze(verb_init, 1).size())
+
+     vert_init = img_embedding_batch
+     #print('vert_init :', vert_init.size())
+     #initialize each edge with verb + respective region feature vector
+     verb_init_expand = verb_init.expand(img_embedding_batch.size(1)-1, verb_init.size(0), verb_init.size(1))
+     verb_init_expand = verb_init_expand.transpose(0,1)
+     edge_init = img_embedding_batch[:,1:] + verb_init_expand
+
+     #print('input to graph :', vert_init.size(), edge_init.size())
+
+     vert_states, edge_states = self.graph((vert_init,edge_init))
      #print self.rep_size
      #print batch_size
-     v_potential = self.linear_v(rep)
+     v_potential = self.linear_v(vert_states[:,0])
      
      vrn_potential = []
      vrn_marginal = []
@@ -292,7 +371,7 @@ class baseline_crf(nn.Module):
      #To use less memory but achieve less parrelism, increase the number of groups
      for i,vrn_group in enumerate(self.linear_vrn): 
        #linear for the group
-       _vrn = vrn_group(rep).view(-1, self.splits[i])
+       _vrn = vrn_group(vert_states[:,0]).view(-1, self.splits[i])
        
        _vr_maxi, _vr_max ,_vrn_marginal = self.log_sum_exp(_vrn)
        _vr_maxi = _vr_maxi.view(-1, len(self.split_vr[i]))
@@ -347,9 +426,9 @@ class baseline_crf(nn.Module):
      
      #this potentially does not work with parrelism, in which case we should figure something out 
      if self.prediction_type == "max_max":
-       rv = (rep, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped) 
+       rv = (vert_states[:,0], v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
      elif self.prediction_type == "max_marginal":
-       rv = (rep, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped) 
+       rv = (vert_states[:,0], v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
      else:
        print "unkown inference type"
        rv = ()
