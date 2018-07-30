@@ -249,7 +249,7 @@ class baseline_crf(nn.Module):
      for (k,v) in self.split_vr.items():
        #print "{} {} {}".format(k, len(v), splits[k]*len(v))
        total += splits[k]*len(v) 
-     #print "total compute : {}".format(total) 
+     print ("total compute : {}".format(total) )
      
      #keep the splits sorted by vr id, to keep the model const w.r.t the encoding 
      for i in range(0,len(splits)):
