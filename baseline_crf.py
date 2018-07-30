@@ -366,7 +366,7 @@ class baseline_crf(nn.Module):
      #print batch_size
      v_potential = self.linear_v(vert_states[:0])
 
-     combo = vert_states[:, 1:] + edge_states
+     combo = torch.sum(vert_states[:, 1:] + edge_states,1)
 
      
      vrn_potential = []
