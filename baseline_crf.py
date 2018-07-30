@@ -161,7 +161,7 @@ class resnet_modified_medium(nn.Module):
         return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
  
  
-'''class resnet_modified_small(nn.Module):
+class resnet_modified_small1(nn.Module):
  def __init__(self):
     super(resnet_modified_small, self).__init__()
     self.resnet = tv.models.resnet34(pretrained=True)
@@ -188,7 +188,7 @@ class resnet_modified_medium(nn.Module):
      
         x = self.dropout2d(x)
 
-        return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))'''
+        return self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
       
 class baseline_crf(nn.Module):
    def train_preprocess(self): return self.train_transform
@@ -226,7 +226,7 @@ class baseline_crf(nn.Module):
      print (cnn_type)
      if cnn_type == "resnet_101" : self.cnn = resnet_modified_large()
      elif cnn_type == "resnet_50": self.cnn = resnet_modified_medium()
-     elif cnn_type == "resnet_34": self.cnn = resnet_modified_small()
+     elif cnn_type == "resnet_34": self.cnn = resnet_modified_small1()
      else: 
        print ("unknown base network")
        exit()
@@ -340,8 +340,8 @@ class baseline_crf(nn.Module):
      batch_size = image.size()[0]
 
      img_embedding_batch = self.cnn(image)
-     full = img_embedding_batch[:,0]
-     combo = torch.sum(img_embedding_batch[:,1:],1)
+     #full = img_embedding_batch[:,0]
+     #combo = torch.sum(img_embedding_batch[:,1:],1)
      #img_embedding_adjusted = self.img_embedding_layer(img_embedding)
      #print('cnn out size', img_embedding_batch.size())
 
@@ -361,7 +361,7 @@ class baseline_crf(nn.Module):
      vert_states, edge_states = self.graph((vert_init,edge_init))'''
      #print self.rep_size
      #print batch_size
-     v_potential = self.linear_v(full)
+     v_potential = self.linear_v(img_embedding_batch)
      
      vrn_potential = []
      vrn_marginal = []
@@ -373,7 +373,7 @@ class baseline_crf(nn.Module):
      #To use less memory but achieve less parrelism, increase the number of groups
      for i,vrn_group in enumerate(self.linear_vrn): 
        #linear for the group
-       _vrn = vrn_group(combo).view(-1, self.splits[i])
+       _vrn = vrn_group(img_embedding_batch).view(-1, self.splits[i])
        
        _vr_maxi, _vr_max ,_vrn_marginal = self.log_sum_exp(_vrn)
        _vr_maxi = _vr_maxi.view(-1, len(self.split_vr[i]))
@@ -428,9 +428,9 @@ class baseline_crf(nn.Module):
      
      #this potentially does not work with parrelism, in which case we should figure something out 
      if self.prediction_type == "max_max":
-       rv = ( combo, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
+       rv = ( img_embedding_batch, v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
      elif self.prediction_type == "max_marginal":
-       rv = (combo, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
+       rv = (img_embedding_batch, v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
      else:
        print ("unkown inference type")
        rv = ()
@@ -647,7 +647,7 @@ if __name__ == "__main__":
   parser.add_argument("--dataset_dir", default="./", help="location of train.json, dev.json, ect.") 
   parser.add_argument("--weights_file", help="the model to start from")
   parser.add_argument("--encoding_file", help="a file corresponding to the encoder")
-  parser.add_argument("--cnn_type", choices=["resnet_34", "resnet_50", "resnet_101"], default="resnet_101", help="the cnn to initilize the crf with") 
+  parser.add_argument("--cnn_type", choices=["resnet_34", "resnet_50", "resnet_101"], default="resnet_34", help="the cnn to initilize the crf with")
   parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
   parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
   parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
