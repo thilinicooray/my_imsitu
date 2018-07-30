@@ -28,7 +28,7 @@ class imSituTensorEvaluation():
       lr = _ref.size()[0]     
       max_r = (lr - 1)//2//self.nref
 
-      gt_v = _ref[0]
+      gt_v = _ref[0].cuda()
       if image_names is not None and _image in self.image_group: sc_key = (gt_v, self.image_group[_image])
       else: sc_key = (gt_v, "")
  
@@ -48,8 +48,7 @@ class imSituTensorEvaluation():
      
       k = 0
       p_frame = None
-      print('get element', _sorted_idx[0:self.topk])
-      print('sum', torch.sum(_sorted_idx[0:self.topk] == gt_v))
+
       verb_found = (torch.sum(_sorted_idx[0:self.topk] == gt_v) == 1)
       if verb_found: _score_card["verb"] += 1
       p_frame = _pred[gt_v]  
