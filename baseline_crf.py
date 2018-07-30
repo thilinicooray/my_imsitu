@@ -484,12 +484,15 @@ class baseline_crf(nn.Module):
        #    print _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
 #_vrn[s][idx][
            pots = pots + _vrn[s][idx][_ref[1 + 2*mr*r + 2*pos + 1]]
+           print('pots ', pots)
          if pots.data[0] > _norm.data[0]: 
            print ("inference error")
            print (pots)
            print (_norm)
          if r == 0: _tot = pots-_norm 
-         else : _tot = self.logsumexp_nx_ny_xy(_tot, pots-_norm)
+         else :
+             _tot = self.logsumexp_nx_ny_xy(_tot, pots-_norm)
+             print('tot', _tot)
        if i == 0: loss = _tot
        else: loss = loss + _tot
      return -loss/batch_size
