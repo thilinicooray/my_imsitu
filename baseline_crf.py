@@ -294,7 +294,7 @@ class baseline_crf(nn.Module):
      self.v_vr = gv_vr
      #print self.v_vr
 
-     self.graph = action_graph(self.cnn.segment_count(), 3, 0)
+     '''self.graph = action_graph(self.cnn.segment_count(), 3, 0)'''
 
      #verb potential
      self.linear_v = nn.Linear(self.rep_size, self.encoding.n_verbs())
@@ -344,7 +344,7 @@ class baseline_crf(nn.Module):
      #print('cnn out size', img_embedding_batch.size())
 
      #initialize verb node with summation of all region feature vectors
-     verb_init = img_embedding_batch[:,0]
+     '''verb_init = img_embedding_batch[:,0]
      #print('verb_init', verb_init.size(), torch.unsqueeze(verb_init, 1).size())
 
      vert_init = img_embedding_batch
@@ -356,10 +356,10 @@ class baseline_crf(nn.Module):
 
      #print('input to graph :', vert_init.size(), edge_init.size())
 
-     vert_states, edge_states = self.graph((vert_init,edge_init))
+     vert_states, edge_states = self.graph((vert_init,edge_init))'''
      #print self.rep_size
      #print batch_size
-     v_potential = self.linear_v(vert_states[:,0])
+     v_potential = self.linear_v(img_embedding_batch[:,0])
      
      vrn_potential = []
      vrn_marginal = []
@@ -371,7 +371,7 @@ class baseline_crf(nn.Module):
      #To use less memory but achieve less parrelism, increase the number of groups
      for i,vrn_group in enumerate(self.linear_vrn): 
        #linear for the group
-       _vrn = vrn_group(vert_states[:,0]).view(-1, self.splits[i])
+       _vrn = vrn_group(img_embedding_batch[:,0]).view(-1, self.splits[i])
        
        _vr_maxi, _vr_max ,_vrn_marginal = self.log_sum_exp(_vrn)
        _vr_maxi = _vr_maxi.view(-1, len(self.split_vr[i]))
@@ -426,9 +426,9 @@ class baseline_crf(nn.Module):
      
      #this potentially does not work with parrelism, in which case we should figure something out 
      if self.prediction_type == "max_max":
-       rv = (vert_states[:,0], v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
+       rv = (img_embedding_batch[:,0], v_potential, vrn_potential, norm, v_max, vr_maxi_grouped)
      elif self.prediction_type == "max_marginal":
-       rv = (vert_states[:,0], v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
+       rv = (img_embedding_batch[:,0], v_potential, vrn_potential, norm, v_marginal, vr_maxi_grouped)
      else:
        print ("unkown inference type")
        rv = ()
