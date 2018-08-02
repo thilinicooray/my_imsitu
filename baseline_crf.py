@@ -358,7 +358,7 @@ class baseline_crf(nn.Module):
   
    #computes log( (1 - exp(x)) * (1 - exp(y)) ) =  1 - exp(y) - exp(x) + exp(y)*exp(x) = 1 - exp(V), so V=  log(exp(y) + exp(x) - exp(x)*exp(y))
    #returns the the log of V
-   def logsumexp_nx_ny_xy(self, x, y):
+    def logsumexp_nx_ny_xy(self, x, y):
      #_,_, v = self.log_sum_exp(torch.cat([x, y, torch.log(torch.exp(x+y))]).view(1,3))
      if x.item() > y.item():
        return torch.log(torch.exp(y-x) + 1 - torch.exp(y) + 1e-8) + x
