@@ -469,14 +469,15 @@ def eval_model(dataset_loader, encoding, model):
     top5 = imSituTensorEvaluation(5, 3, encoding)
 
     mx = len(dataset_loader)
-    for i, (index, input, target) in enumerate(dataset_loader):
-        print ("{}/{} batches\r".format(i+1,mx)) ,
-        input_var = torch.autograd.Variable(input.cuda(), volatile = True)
-        target_var = torch.autograd.Variable(target.cuda(), volatile = True)
-        (scores,predictions)  = model.forward_max(input_var)
-        (s_sorted, idx) = torch.sort(scores, 1, True)
-        top1.add_point(target, predictions.data, idx.data)
-        top5.add_point(target, predictions.data, idx.data)
+    with torch.no_grad():
+        for i, (index, input, target) in enumerate(dataset_loader):
+            #print ("{}/{} batches\r".format(i+1,mx)) ,
+            input_var = torch.autograd.Variable(input.cuda(), volatile = True)
+            target_var = torch.autograd.Variable(target.cuda(), volatile = True)
+            (scores,predictions)  = model.forward_max(input_var)
+            (s_sorted, idx) = torch.sort(scores, 1, True)
+            top1.add_point(target, predictions.data, idx.data)
+            top5.add_point(target, predictions.data, idx.data)
 
     print ("\ndone.")
     return (top1, top5)
